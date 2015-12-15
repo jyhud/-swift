@@ -7,18 +7,47 @@
 //
 
 import UIKit
+import WatchConnectivity
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+
+class AppDelegate: UIResponder, UIApplicationDelegate, WCSessionDelegate {
 
     var window: UIWindow?
 
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
+        
+        if WCSession.isSupported()
+        {
+            let session = WCSession.defaultSession()
+            session.delegate = self
+            session.activateSession()
+        }
+        
+        //注册通知
+        let notifications = UIUserNotificationSettings(forTypes: UIUserNotificationType(arrayLiteral: UIUserNotificationType.Alert, UIUserNotificationType.Badge, UIUserNotificationType.Sound), categories: nil)
+        UIApplication.sharedApplication().registerUserNotificationSettings(notifications)
+        
         return true
     }
-
+    
+    func session(session: WCSession, didReceiveMessage message: [String : AnyObject], replyHandler: ([String : AnyObject]) -> Void)
+    {
+        let msg = message["msg"] as! String
+        
+        let localNotification = UILocalNotification()
+        localNotification.alertBody = "\(msg) - \(NSDate().description)"
+        localNotification.alertTitle = "提示"
+        localNotification.alertAction = "action"
+        localNotification.fireDate = NSDate()
+        UIApplication.sharedApplication().scheduleLocalNotification(localNotification)
+        
+        let receive = ["msg":"收到消息了：\(NSDate().description)"]
+        replyHandler(receive)
+    }
+    
     func applicationWillResignActive(application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
         // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
@@ -40,7 +69,5 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillTerminate(application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
-
-
 }
 
